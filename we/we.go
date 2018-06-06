@@ -2,9 +2,7 @@ package we
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -17,12 +15,6 @@ const (
 	remainingDaysURL = subscriptionURL + "/remainingDays"
 	loyaltyPointsURL = subscriptionURL + "/loyaltyPoints"
 )
-
-// Calculates base64 of username/password.
-func authorizationToken(username, password string) string {
-	concat := fmt.Sprintf("%s:%s", username, password)
-	return base64.StdEncoding.EncodeToString([]byte(concat))
-}
 
 // Credentials represents login credentials.
 type Credentials struct {

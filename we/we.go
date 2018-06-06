@@ -1,7 +1,9 @@
 package we
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -77,22 +79,68 @@ type Client struct {
 
 // Login submits email and password to be checked by backend.
 func (c *Client) Login() (*CustomerInfo, error) {
-	return nil, nil
+	cred := Credentials{UID: c.username, Password: c.password}
+	body := new(bytes.Buffer)
+	err := json.NewEncoder(body).Encode(cred)
+	if err != nil {
+		return nil, err
+	}
+	r, err := c.post(loginURL, body)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	customerInfo := new(CustomerInfo)
+	err = json.NewDecoder(r.Body).Decode(customerInfo)
+	if err != nil {
+		return nil, err
+	}
+	return customerInfo, nil
 }
 
 // Usage returns UsageInfo of logged in user.
 func (c *Client) Usage() (*UsageInfo, error) {
-	return nil, nil
+	r, err := c.get(usageURL)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	usageInfo := new(UsageInfo)
+	err = json.NewDecoder(r.Body).Decode(usageInfo)
+	if err != nil {
+		return nil, err
+	}
+	return usageInfo, nil
 }
 
 // RemainingDays returns service subscription of logged in user.
 func (c *Client) RemainingDays() (*RemainingDaysInfo, error) {
-	return nil, nil
+	r, err := c.get(remainingDaysURL)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	remainingDaysInfo := new(RemainingDaysInfo)
+	err = json.NewDecoder(r.Body).Decode(remainingDaysInfo)
+	if err != nil {
+		return nil, err
+	}
+	return remainingDaysInfo, nil
 }
 
 // LoyaltyPoints returns 4U points of logged in user.
 func (c *Client) LoyaltyPoints() (*LoyaltyPointsInfo, error) {
-	return nil, nil
+	r, err := c.get(loyaltyPointsURL)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	loyaltyPointsInfo := new(LoyaltyPointsInfo)
+	err = json.NewDecoder(r.Body).Decode(loyaltyPointsInfo)
+	if err != nil {
+		return nil, err
+	}
+	return loyaltyPointsInfo, nil
 }
 
 // get creates a GET request to url.

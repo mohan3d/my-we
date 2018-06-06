@@ -1,7 +1,31 @@
 package we
 
+import (
+	"encoding/base64"
+	"fmt"
+	"io"
+	"net/http"
+)
+
+const (
+	apiURL           = "https://mytedata.net/services/rest"
+	subscriptionURL  = apiURL + "/subscription/customer/%s"
+	loginURL         = apiURL + "/login/checkPassword"
+	usageURL         = subscriptionURL + "/ADSLUsage"
+	remainingDaysURL = subscriptionURL + "/remainingDays"
+	loyaltyPointsURL = subscriptionURL + "/loyaltyPoints"
+)
+
+// Calculates base64 of username/password.
 func authorizationToken(username, password string) string {
-	return ""
+	concat := fmt.Sprintf("%s:%s", username, password)
+	return base64.StdEncoding.EncodeToString([]byte(concat))
+}
+
+// Credentials represents login credentials.
+type Credentials struct {
+	Password string `json:"password"`
+	UID      string `json:"uid"`
 }
 
 // CustomerInfo describes customer info.
@@ -44,7 +68,12 @@ type LoyaltyPointsInfo struct {
 }
 
 // Client describes we api client.
-type Client struct{}
+type Client struct {
+	username string
+	password string
+	token    string
+	client   http.Client
+}
 
 // Login submits email and password to be checked by backend.
 func (c *Client) Login() (*CustomerInfo, error) {
@@ -66,7 +95,39 @@ func (c *Client) LoyaltyPoints() (*LoyaltyPointsInfo, error) {
 	return nil, nil
 }
 
+// get creates a GET request to url.
+func (c *Client) get(url string) (*http.Response, error) {
+	r, err := c.newRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.client.Do(r)
+}
+
+// post creates a POST request to url.
+func (c *Client) post(url string, body io.Reader) (*http.Response, error) {
+	r, err := c.newRequest(http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	return c.client.Do(r)
+}
+
+// newRequest creates new request with required headers.
+func (c *Client) newRequest(method, url string, body io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	r.SetBasicAuth(c.username, c.password)
+	r.Header.Add("Content-Type", "application/json")
+	return r, nil
+}
+
 // New returns new we client initialized with email and password.
 func New(email, password string) *Client {
-	return nil
+	client := new(Client)
+	client.username = email
+	client.password = password
+	return client
 }

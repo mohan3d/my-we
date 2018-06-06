@@ -3,6 +3,7 @@ package we
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -63,10 +64,10 @@ type LoyaltyPointsInfo struct {
 
 // Client describes we api client.
 type Client struct {
-	username string
-	password string
-	token    string
-	client   http.Client
+	username       string
+	password       string
+	customerNumber string
+	client         http.Client
 }
 
 // Login submits email and password to be checked by backend.
@@ -87,12 +88,14 @@ func (c *Client) Login() (*CustomerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	// set customerNumber
+	c.customerNumber = customerInfo.CustomerInformationDto.CustomerNumber
 	return customerInfo, nil
 }
 
 // Usage returns UsageInfo of logged in user.
 func (c *Client) Usage() (*UsageInfo, error) {
-	r, err := c.get(usageURL)
+	r, err := c.get(fmt.Sprintf(usageURL, c.customerNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +110,7 @@ func (c *Client) Usage() (*UsageInfo, error) {
 
 // RemainingDays returns service subscription of logged in user.
 func (c *Client) RemainingDays() (*RemainingDaysInfo, error) {
-	r, err := c.get(remainingDaysURL)
+	r, err := c.get(fmt.Sprintf(remainingDaysURL, c.customerNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +125,7 @@ func (c *Client) RemainingDays() (*RemainingDaysInfo, error) {
 
 // LoyaltyPoints returns 4U points of logged in user.
 func (c *Client) LoyaltyPoints() (*LoyaltyPointsInfo, error) {
-	r, err := c.get(loyaltyPointsURL)
+	r, err := c.get(fmt.Sprintf(loyaltyPointsURL, c.customerNumber))
 	if err != nil {
 		return nil, err
 	}

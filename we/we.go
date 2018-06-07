@@ -3,6 +3,7 @@ package we
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,8 @@ const (
 	remainingDaysURL = subscriptionURL + "/remainingDays"
 	loyaltyPointsURL = subscriptionURL + "/loyaltyPoints"
 )
+
+var errUnauthorized = errors.New("You are not authorized")
 
 // Credentials represents login credentials.
 type Credentials struct {
@@ -60,6 +63,13 @@ type RemainingDaysInfo struct {
 // LoyaltyPointsInfo describes 4U points.
 type LoyaltyPointsInfo struct {
 	LoyaltyPoints int `json:"loyaltyPoints"`
+}
+
+// ErrorInfo describes response errors.
+type ErrorInfo struct {
+	Exception struct {
+		MessageEn string `json:"messageEn"`
+	} `json:"exception"`
 }
 
 // Client describes we api client.
@@ -144,7 +154,14 @@ func (c *Client) get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.client.Do(r)
+	resp, err := c.client.Do(r)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkError(resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 // post creates a POST request to url.
@@ -153,7 +170,14 @@ func (c *Client) post(url string, body io.Reader) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.client.Do(r)
+	resp, err := c.client.Do(r)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkError(resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 // newRequest creates new request with required headers.
@@ -173,4 +197,24 @@ func New(email, password string) *Client {
 	client.username = email
 	client.password = password
 	return client
+}
+
+func checkError(resp *http.Response) error {
+	if resp.StatusCode == http.StatusUnauthorized {
+		return errUnauthorized
+	}
+	if resp.StatusCode != http.StatusOK {
+		return parseError(resp)
+	}
+	return nil
+}
+
+func parseError(resp *http.Response) error {
+	defer resp.Body.Close()
+	errorInfo := new(ErrorInfo)
+	err := json.NewDecoder(resp.Body).Decode(errorInfo)
+	if err != nil {
+		return err
+	}
+	return errors.New(errorInfo.Exception.MessageEn)
 }

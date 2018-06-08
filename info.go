@@ -70,7 +70,7 @@ func handleError(err error) {
 }
 
 // getInfo extracts and returns specific info in rows format.
-// if which info is not specified return all info (profile, usage, days and points).
+// If which is not a valid option, return all info (profile, usage, days and points).
 func getInfo(client *we.Client, which string, login bool) [][]string {
 	var c *we.CustomerInfo
 	var err error

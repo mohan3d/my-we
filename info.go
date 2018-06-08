@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/mohan3d/my-we/we"
 	"github.com/olekukonko/tablewriter"
@@ -34,8 +35,9 @@ func profileInfo(v *we.CustomerInfo) [][]string {
 
 // usageInfo returns usage info in rows format.
 func usageInfo(v *we.UsageInfo) [][]string {
+	t := time.Unix(v.AdslUsage.StartDate/1000, 0)
 	data := [][]string{
-		{"Start date", fmt.Sprintf("%v", v.AdslUsage.StartDate)},
+		{"Start date", fmt.Sprintf("%v", t.Format("02/01/2006"))},
 		{"Quota", fmt.Sprintf("%v GB", v.AdslUsage.Quota)},
 		{"Total Used", fmt.Sprintf("%v GB", v.AdslUsage.TotalUsed)},
 	}

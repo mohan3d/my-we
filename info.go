@@ -60,3 +60,46 @@ func pointsInfo(v *we.LoyaltyPointsInfo) [][]string {
 	}
 	return data
 }
+
+// handleError displays error and exists.
+func handleError(err error) {
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+// getInfo extracts and returns specific info in rows format.
+// if which info is not specified return all info (profile, usage, days and points).
+func getInfo(client *we.Client, which string, login bool) [][]string {
+	var c *we.CustomerInfo
+	var err error
+	var info [][]string
+
+	if login {
+		c, err = client.Login()
+		handleError(err)
+	}
+	switch which {
+	case profile:
+		info = profileInfo(c)
+	case usage:
+		u, err := client.Usage()
+		handleError(err)
+		info = usageInfo(u)
+	case days:
+		d, err := client.RemainingDays()
+		handleError(err)
+		info = daysInfo(d)
+	case points:
+		p, err := client.LoyaltyPoints()
+		handleError(err)
+		info = pointsInfo(p)
+	default:
+		info = profileInfo(c)
+		info = append(info, getInfo(client, usage, false)...)
+		info = append(info, getInfo(client, days, false)...)
+		info = append(info, getInfo(client, points, false)...)
+	}
+	return info
+}

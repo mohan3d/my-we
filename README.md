@@ -1,4 +1,5 @@
 # my-we
+[![Go Report Card](https://goreportcard.com/badge/github.com/mohan3d/my-we)](https://goreportcard.com/report/github.com/mohan3d/my-we)
 
 Golang CLI for WE https://mytedata.net
 

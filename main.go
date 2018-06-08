@@ -19,16 +19,16 @@ const (
 	envPassword = "WE_PASSWORD"
 )
 
-// displayTable creates and displays data in table format.
-func displayTable(data [][]string) {
+// createTable returns data in table format.
+func createTable(data [][]string) *tablewriter.Table {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.AppendBulk(data)
-	table.Render()
+	return table
 }
 
-// displayProfile displays profile in table format.
-func displayProfile(v *we.CustomerInfo) {
+// profileInfo returns profile info in rows format.
+func profileInfo(v *we.CustomerInfo) [][]string {
 	data := [][]string{
 		{"Customer name", fmt.Sprintf("%v", v.CustomerInformationDto.CustomerName)},
 		{"Customer number", fmt.Sprintf("%v", v.CustomerInformationDto.CustomerNumber)},
@@ -40,36 +40,36 @@ func displayProfile(v *we.CustomerInfo) {
 		{"City", fmt.Sprintf("%v", v.CustomerInformationDto.City)},
 		{"District", fmt.Sprintf("%v", v.CustomerInformationDto.District)},
 	}
-	displayTable(data)
+	return data
 }
 
-// displayUsage displays usage in table format.
-func displayUsage(v *we.UsageInfo) {
+// usageInfo returns usage info in rows format.
+func usageInfo(v *we.UsageInfo) [][]string {
 	data := [][]string{
 		{"Start date", fmt.Sprintf("%v", v.AdslUsage.StartDate)},
 		{"Quota", fmt.Sprintf("%v GB", v.AdslUsage.Quota)},
 		{"Total Used", fmt.Sprintf("%v GB", v.AdslUsage.TotalUsed)},
 	}
-	displayTable(data)
+	return data
 }
 
-// displayDays displays remaining days in table format.
-func displayDays(v *we.RemainingDaysInfo) {
+// daysInfo returns days info in rows format.
+func daysInfo(v *we.RemainingDaysInfo) [][]string {
 	data := [][]string{
 		{"Expiry date", fmt.Sprintf("%v", v.RemainingDays.ADSLExpiryDate)},
 		{"Amount due", fmt.Sprintf("%v", v.RemainingDays.AmountDue)},
 		{"Package name", fmt.Sprintf("%v", v.RemainingDays.PackageName)},
 		{"Remaining day", fmt.Sprintf("%v", v.RemainingDays.RemainingDays)},
 	}
-	displayTable(data)
+	return data
 }
 
-// displayPoints displays 4U points in table format.
-func displayPoints(v *we.LoyaltyPointsInfo) {
+// displayPoints returns 4U points info in rows format.
+func pointsInfo(v *we.LoyaltyPointsInfo) [][]string {
 	data := [][]string{
 		{"4U points", fmt.Sprintf("%v", v.LoyaltyPoints)},
 	}
-	displayTable(data)
+	return data
 }
 
 // emptyEmailOrPassword returns true if email or password is empty.
@@ -107,37 +107,42 @@ func main() {
 	}
 
 	client := we.New(emailVal, passwordVal)
-	customerInfo, err := client.Login()
+	c, err := client.Login()
 
 	switch onlyVal {
 	case profile:
 		handleError(err)
-		displayProfile(customerInfo)
+		t := profileInfo(c)
+		createTable(t).Render()
 	case usage:
-		usageInfo, err := client.Usage()
+		u, err := client.Usage()
 		handleError(err)
-		displayUsage(usageInfo)
+		t := usageInfo(u)
+		createTable(t).Render()
 	case days:
-		daysInfo, err := client.RemainingDays()
+		d, err := client.RemainingDays()
 		handleError(err)
-		displayDays(daysInfo)
+		t := daysInfo(d)
+		createTable(t).Render()
 	case points:
-		pointsInfo, err := client.LoyaltyPoints()
+		p, err := client.LoyaltyPoints()
 		handleError(err)
-		displayPoints(pointsInfo)
+		t := pointsInfo(p)
+		createTable(t).Render()
 	default:
 		// display all data
 		handleError(err)
-		usageInfo, err := client.Usage()
+		u, err := client.Usage()
 		handleError(err)
-		daysInfo, err := client.RemainingDays()
+		d, err := client.RemainingDays()
 		handleError(err)
-		pointsInfo, err := client.LoyaltyPoints()
+		p, err := client.LoyaltyPoints()
 		handleError(err)
 
-		displayProfile(customerInfo)
-		displayUsage(usageInfo)
-		displayDays(daysInfo)
-		displayPoints(pointsInfo)
+		t := createTable(profileInfo(c))
+		t.AppendBulk(usageInfo(u))
+		t.AppendBulk(daysInfo(d))
+		t.AppendBulk(pointsInfo(p))
+		t.Render()
 	}
 }
